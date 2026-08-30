@@ -10,11 +10,14 @@ You must be in a `tmux` session for this to work, as it opens a new pane with th
 
 ```sh
 # Examples
-## Compile and run inline assembly code
+## Compile and run inline assembly code. --debug/-d opens GDB
 asmx --arch aarch64 --asm "nop;nop;nop;nop" --vma 0x9000 --debug
 
 ## Compile and run code from an assembly file
 asmx --arch amd64 --file shellcode.S -d
+
+## If you omit --arch, it defaults to the host architecture
+asmx --asm "nop" -d
 
 ## Run and debug a pre-compiled ELF file
 asmx -i mips32_hello_world -d
