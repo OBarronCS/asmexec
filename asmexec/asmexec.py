@@ -103,9 +103,12 @@ MUSL_TARGET_NAME: dict[str, str | None] = {
     "s390x": "linux-musl",
 }
 
+# Key is the canonical name, values are the aliases
 ARCHITECTURE_NAME_ALIASES: dict[str, set[str]] = {
     "x86_64": {"amd64", "x64", "x86-64"},
     "x86": {"i386", "i686"},
+    "mips": {"mips32"},
+    "mipsel": {"mipsel32"},
     "aarch64": {"arm64"},
     "arm": {"arm32"},
     "riscv32": {"rv32"},
