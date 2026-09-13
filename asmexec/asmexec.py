@@ -36,7 +36,7 @@ from typing import List
 from typing import Literal
 from typing import Tuple
 
-from asmexec.helpers import find_cached_version
+from asmexec.helpers import find_cached_version, get_cache_dir
 
 QEMU_HOST = "127.0.0.1"
 USER_CODE_SECTION_NAME = ".text"
@@ -331,7 +331,7 @@ def zig_assemble_to_elf(
 
     cached_file_path, is_cached = find_cached_version(
         [zig_executable, "cc", "-target", "-o"],
-        assembly_string,
+        header + USER_CODE_SECTION_NAME + ENTRY_SYMBOL_NAME + assembly_string,
         arch,
         includes,
         vma,
@@ -428,6 +428,25 @@ def zig_assemble_to_elf(
         #     return f.read()
 
 
+def ensure_tmux():
+    """
+    If we are not currently in a tmux session, open one up
+    """
+    if os.environ.get("TMUX"):
+        # We are already inside of tmux
+        return
+
+    if not shutil.which("tmux"):
+        print("tmux not found")
+        sys.exit(1)
+    if not sys.stdin.isatty():
+        print("Not in a tty, can't start tmux")
+        sys.exit(1)
+
+    cmd = getattr(sys, "orig_argv", [sys.executable, os.path.abspath(sys.argv[0]), *sys.argv[1:]])
+    os.execvp("tmux", ["tmux", "new-session", "--", *cmd])
+
+
 class RunMode(Enum):
     DEBUG = auto()
     RUN = auto()
@@ -451,6 +470,9 @@ def run(
     """
 
     if mode == RunMode.DEBUG:
+
+        ensure_tmux()
+
         p = debug(arch, executable_file_path, gdbscript=gdb_script)
         p.interactive()
     elif mode == RunMode.RUN:
@@ -541,7 +563,18 @@ def main():
         help="Syntax for x86 assembly. Intel by default",
     )
 
+    parser.add_argument(
+        "--cache-folder",
+        dest="cache_folder",
+        action="store_true",
+        default=False
+    )
+
     parsed_args = parser.parse_args()
+
+    if parsed_args.cache_folder:
+        print(get_cache_dir())
+        sys.exit(0)
 
     if (
         not parsed_args.file
@@ -550,7 +583,7 @@ def main():
         and not parsed_args.arch_list
     ):
         parser.print_help()
-        sys.exit(0)
+        sys.exit(1)
 
     input_architecture: str = parsed_args.arch
     input_file: str = parsed_args.file
