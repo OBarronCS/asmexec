@@ -6,8 +6,6 @@ Inspired by helpful functions in [`pwntools`](https://github.com/Gallopsled/pwnt
 
 ## Quick start
 
-You must be in a `tmux` session for this to work, as it opens a new pane with the debugger.
-
 ```sh
 # Examples
 ## Compile and run inline assembly code. --debug/-d opens GDB
