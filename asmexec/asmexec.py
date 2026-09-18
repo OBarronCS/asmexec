@@ -14,6 +14,7 @@ import random
 from pathlib import Path
 import shlex
 import sys
+import re
 import os
 import os.path
 import shutil
@@ -39,8 +40,6 @@ from typing import Tuple
 from asmexec.helpers import find_cached_version, get_cache_dir
 
 QEMU_HOST = "127.0.0.1"
-USER_CODE_SECTION_NAME = ".text"
-ENTRY_SYMBOL_NAME = "__start"
 
 pwnlib.context.context.log_level = "debug"
 pwnlib.context.context.terminal = ["tmux", "splitw", "-h", "-l", "80%"]
@@ -131,18 +130,19 @@ for canonical_name, value in ARCHITECTURE_NAME_ALIASES.items():
         allowed_architectures.append(alias)
         REVERSE_ARCH_NAME_ALIAS_MAP[alias] = canonical_name
 
-_prefix_header = f".global _start;.global __start\n.section {USER_CODE_SECTION_NAME}\n_start:;__start:\n"
 
 INTEL_SYNTAX = ".intel_syntax noprefix"
 ATT_SYNTAX = ".att_syntax prefix"
-
-
 SYNTAX_TABLE: Dict[str, str] = {"intel": INTEL_SYNTAX, "att": ATT_SYNTAX}
-
 ARCHES_WHERE_SELECT_SYNTAX = ("x86_64", "x86")
-
 DEFAULT_SYNTAX = "intel"
 VALID_SYNTAX = list(SYNTAX_TABLE.keys())
+
+USER_CODE_SECTION_NAME = ".text"
+ENTRY_SYMBOL_NAME = "__start"
+
+_start_section_header = f".section {USER_CODE_SECTION_NAME};"
+_prefix_header = f".global {ENTRY_SYMBOL_NAME};.global _start;\n{ENTRY_SYMBOL_NAME}:;_start:\n"
 
 _asm_header: Dict[str, str] = {
     # `.intel_syntax noprefix` forces the use of Intel assembly syntax instead of AT&T
@@ -300,6 +300,17 @@ def zig_compile_c_to_elf(
         return compiled_file
 
 
+EXISTING_START_SYMBOLS = ["_start:","__start:"]
+
+def simple_remove_comments(assembly_string: str) -> str:
+    return "\n".join(line.split("#")[0].rstrip() for line in assembly_string.splitlines())
+
+def does_start_symbol_exist(assembly_string: str) -> bool:
+    tmp = simple_remove_comments(assembly_string)
+    for possible in EXISTING_START_SYMBOLS:
+        return possible in tmp
+    return False
+
 def zig_assemble_to_elf(
     arch: str,
     assembly_string: str,
@@ -316,9 +327,15 @@ def zig_assemble_to_elf(
 
     zig_executable = get_zig_executable()
 
-    header = _asm_header.get(arch, None)
-    if header is None:
-        raise ValueError(f"Can't find asm header for target {arch}")
+    header = f"{_start_section_header}\n"
+    if not does_start_symbol_exist(assembly_string):
+
+        insert_header = _asm_header.get(arch, None)
+
+        if insert_header is None:
+            raise ValueError(f"Can't find asm header for target {arch}")
+
+        header += insert_header
 
     if arch in ARCHES_WHERE_SELECT_SYNTAX:
         header += SYNTAX_TABLE[syntax] + "\n"
@@ -394,6 +411,10 @@ def zig_assemble_to_elf(
             universal_newlines=True,
         )
         if compile_process.returncode != 0:
+            print("Compilation failed")
+
+            print(Path(asm_file).read_text())
+
             raise Exception(
                 "Compilation error", compile_process.stdout, compile_process.stderr
             )
