@@ -23,8 +23,8 @@ asmx -i mips32_hello_world -d
 ## Run (but do not debug with GDB) a pre-compiled ELF file
 asmx -i riscv64_hello_world -r
 
-## Compile a program with loongarch64 and debug it
-asmx --arch loongarch64 -i hello_world.c -d
+## Compile a program with loongarch64 and debug it. `--libc` statically links it with musl
+asmx --arch loongarch64 -i hello_world.c --libc -d
 ```
 
 ## Command reference
