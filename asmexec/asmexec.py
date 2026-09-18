@@ -481,7 +481,7 @@ def run(
 ) -> None:
     # if args.PRINT:
     #     assembly_compiled = asm(assembly_source_code)
-    #     dumpit(assembly_compiled)
+    #     print(assembly_compiled)
     #     sys.exit(0)
 
     gdb_script = f"""
