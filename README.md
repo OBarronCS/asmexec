@@ -85,25 +85,9 @@ Install with `uv`
 uv tool install git+https://github.com/OBarronCS/asmexec.git
 ```
 
-With `pip`
-```sh
-# pipx
-pipx install git+https://github.com/OBarronCS/asmexec.git
-
-# If pipx is not available, pip works too
-pip install git+https://github.com/OBarronCS/asmexec.git
-```
-
 ### For local development
 
 ```sh
-# With uv
 uv tool install --editable .
-
-# With pipx
-pipx install --editable .
-
-# Or, with pip
-pip install --editable .
 ```
 
