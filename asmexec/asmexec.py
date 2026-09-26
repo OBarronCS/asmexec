@@ -29,6 +29,7 @@ import platform
 
 from asmexec.compile import (
     ARCH_INFO_MAPPING,
+    ARCHITECTURE_NAME_ALIASES,
     ASSEMBLY_CALLBACKS,
     CLI_ALLOWED_ARCHITECTURES,
     DEFAULT_X64_SYNTAX,
@@ -223,6 +224,15 @@ def main():
         print(get_cache_dir())
         sys.exit(0)
 
+    if args.arch_list:
+        for arch in SUPPORTED_ARCHITECTURES:
+            aliases = ARCHITECTURE_NAME_ALIASES.get(arch, None)
+            if aliases:
+                print(f"{arch} ({', '.join(aliases)})")
+            else:
+                print(arch)
+        sys.exit(0)
+
     if not args.file and not args.asm and not args.outfile and not args.arch_list:
         parser.print_help()
         sys.exit(1)
@@ -232,10 +242,6 @@ def main():
 
     input_architecture: str | None = args.arch
     input_file: str = args.file
-
-    if args.arch_list:
-        print(" ".join(CLI_ALLOWED_ARCHITECTURES))
-        sys.exit(0)
 
     if input_architecture is not None:
         input_architecture = resolve_to_canonical_name(input_architecture)
