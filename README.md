@@ -29,7 +29,7 @@ asmx -i riscv64_hello_world -r
 asmx --arch loongarch64 -i hello_world.c --libc -d
 ```
 
-By default, the tool will use `zig cc` under the hood. This supports the assembly syntax supported by `Clang`.
+By default, the tool will use `zig cc` under the hood. This supports the assembly syntax supported by `clang`.
 
 To use `nasm` instead (for x86), you can add `--nasm`
 
@@ -45,6 +45,8 @@ asmx --nasm -i asm.S -d
 ## It supports 32-bit and 64-bit x86
 asmx --nasm --asm "mov eax, 10000" -d --arch x86
 ```
+
+When running with `-d`, the debugger opens in a new tmux pane. You must have tmux installed for this to work.
 
 ## Command reference
 
