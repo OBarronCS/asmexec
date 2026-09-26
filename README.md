@@ -9,18 +9,19 @@ Inspired by helpful functions in [`pwntools`](https://github.com/Gallopsled/pwnt
 ```sh
 # Examples
 ## Compile and run inline assembly code. --debug/-d opens GDB
-asmx --arch aarch64 --asm "nop;nop;nop;nop" --vma 0x90000 --debug
+asmx --arch aarch64 --asm "nop;nop;nop;nop" --debug
 
 ## Compile and run code from an assembly file
 asmx --arch amd64 --file shellcode.S -d
 
 ## If you omit --arch, it defaults to the host architecture
-## Note that you can choose the path to GDB, which is 'gdb-multiarch' or 'gdb' by default.
-## In this case, we set it to 'pwndbg'
-asmx --asm "nop" -d pwndbg
+## You can choose the virtual address to load the code into with `--vma`
+asmx --asm "nop" --vma 0x90000 -d
 
 ## Run and debug a pre-compiled ELF file
-asmx -i mips32_hello_world -d
+## Note that you can choose the path to GDB, which is 'gdb-multiarch' or 'gdb' by default.
+## In this case, we set it to 'pwndbg'
+asmx -i mips32_hello_world -d pwndbg
 
 ## Run (but do not debug with GDB) a pre-compiled ELF file
 asmx -i riscv64_hello_world -r
