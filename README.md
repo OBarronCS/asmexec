@@ -15,7 +15,7 @@ asmx --arch aarch64 --asm "nop;nop;nop;nop" --vma 0x9000 --debug
 asmx --arch amd64 --file shellcode.S -d
 
 ## If you omit --arch, it defaults to the host architecture
-## Note that you can choose the path to GDB, which is 'gdb' by default.
+## Note that you can choose the path to GDB, which is 'gdb-multiarch' or 'gdb' by default.
 ## In this case, we set it to 'pwndbg'
 asmx --asm "nop" -d pwndbg
 
@@ -69,7 +69,8 @@ asmx <options>
     Run the compiled source code
 
 -d [gdb_path]
-    Open the program in a gdb. By default, it uses `gdb` as the path to the debugger,
+    Open the program in a gdb. By default, it checks if `gdb-multiarch` can be found.
+    If not, it uses `gdb` as the path to the debugger,
     but you can provide an explicit path, such as `pwndbg`, to override this
 
 -i, --file <filename>
