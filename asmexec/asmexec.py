@@ -11,6 +11,7 @@ import argparse
 from enum import Enum, auto
 import random
 from pathlib import Path
+import shlex
 import sys
 import os
 import os.path
@@ -88,6 +89,9 @@ def debug(arch: str, filepath: str, gdb_path: str = "gdb"):
         qemu_args += ["-L", sysroot]
 
     args = qemu_args + [filepath]
+
+    print("Launching qemu with the following command:")
+    print(" ".join(shlex.quote(arg) for arg in args))
 
     gdbserver = runner(args, aslr=1)
 
