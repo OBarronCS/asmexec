@@ -215,7 +215,11 @@ def main():
     )
 
     parser.add_argument(
-        "--cache-folder", dest="cache_folder", action="store_true", default=False
+        "--cache-folder",
+        dest="cache_folder",
+        action="store_true",
+        default=False,
+        help=get_cache_dir()
     )
 
     args = parser.parse_args()
