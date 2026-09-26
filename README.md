@@ -27,6 +27,22 @@ asmx -i riscv64_hello_world -r
 asmx --arch loongarch64 -i hello_world.c --libc -d
 ```
 
+By default, the tool will use `zig cc` under the hood. This supports the assembly syntax supported by `Clang`.
+
+To use `nasm` instead (for x86), you can add `--nasm`
+
+```sh
+## Note that you must have `nasm` findable on your PATH for this to work.
+## Add the --nasm flag to use nasm syntax
+asmx --nasm --asm "mov eax, 10000" -d
+
+## This works with files, as well
+asmx --nasm -i asm.S -d
+
+## It supports 32-bit and 64-bit x86
+asmx --nasm --asm "mov eax, 10000" -d --arch x86
+```
+
 ## Command reference
 
 The repo provides the `asmexec` command (and the `asmx` alias).
@@ -64,6 +80,9 @@ asmx <options>
 
 --libc
     Add this flag when compiling c source code, and you want to statically link with musl.
+
+--nasm
+    Compile with nasm. This works for x86 architectures.
 
 --syntax <intel, att>
     If compiling x86 assembly code, note which syntax style you are using. This defaults to `intel` 
