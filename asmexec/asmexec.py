@@ -48,7 +48,7 @@ pwnlib.context.context.terminal = ["tmux", "splitw", "-h", "-l", "80%"]
 
 
 # A simplified version of gdb.attach from pwntools with our own architecture mappings
-def debug(arch: str, filepath: str):
+def debug(arch: str, filepath: str, gdb_path: str = "gdb"):
     runner = pwnlib.tubes.process.process
     which = pwnlib.util.misc.which
 
@@ -80,7 +80,7 @@ def debug(arch: str, filepath: str):
 
     gdbserver = runner(args, aslr=1)
 
-    # pwnlib.context.context.gdb_binary = "gdb"
+    pwnlib.context.context.gdb_binary = gdb_path
 
     tmp = pwnlib.gdb.attach(
         (QEMU_HOST, port), exe=exe, gdbscript=gdbscript, sysroot=sysroot
@@ -119,27 +119,6 @@ class RunMode(Enum):
     RUN = auto()
 
 
-def run(
-    arch: str,
-    executable_file_path: str,
-    mode: RunMode,
-    shellcode_mode: bool,
-) -> None:
-    # if args.PRINT:
-    #     assembly_compiled = asm(assembly_source_code)
-    #     print(assembly_compiled)
-    #     sys.exit(0)
-
-    if mode == RunMode.DEBUG:
-        ensure_tmux()
-
-        p = debug(arch, executable_file_path)
-        p.interactive()
-    elif mode == RunMode.RUN:
-        p = run_program(executable_file_path)
-        p.interactive()
-
-
 def main():
     install_default_handler()
 
@@ -172,9 +151,11 @@ def main():
         "--debug",
         "-d",
         dest="debug",
+        nargs="?",
+        const="gdb",
         default=False,
-        action="store_true",
         help="Debug the program",
+        metavar="gdb path",
     )
 
     parser.add_argument(
@@ -236,28 +217,23 @@ def main():
         "--cache-folder", dest="cache_folder", action="store_true", default=False
     )
 
-    parsed_args = parser.parse_args()
+    args = parser.parse_args()
 
-    if parsed_args.cache_folder:
+    if args.cache_folder:
         print(get_cache_dir())
         sys.exit(0)
 
-    if (
-        not parsed_args.file
-        and not parsed_args.asm
-        and not parsed_args.outfile
-        and not parsed_args.arch_list
-    ):
+    if not args.file and not args.asm and not args.outfile and not args.arch_list:
         parser.print_help()
         sys.exit(1)
 
-    if parsed_args.nasm:
+    if args.nasm:
         chosen_compiler = "nasm"
 
-    input_architecture: str | None = parsed_args.arch
-    input_file: str = parsed_args.file
+    input_architecture: str | None = args.arch
+    input_file: str = args.file
 
-    if parsed_args.arch_list:
+    if args.arch_list:
         print(" ".join(CLI_ALLOWED_ARCHITECTURES))
         sys.exit(0)
 
@@ -306,14 +282,14 @@ def main():
             print(f"Choosing host architecture: {platform_arch}")
             input_architecture = platform_arch
 
-    if parsed_args.asm is not None:
-        asm_source_code = parsed_args.asm
+    if args.asm is not None:
+        asm_source_code = args.asm
     elif not sys.stdin.isatty():
         asm_source_code = sys.stdin.read()
 
     if c_source_code:
         compiled_object_path = zig_compile_c_to_elf(
-            input_architecture, c_source_code, parsed_args.libc
+            input_architecture, c_source_code, args.libc
         )
     elif asm_source_code:
         assembly_function = ASSEMBLY_CALLBACKS[chosen_compiler]
@@ -321,11 +297,11 @@ def main():
         compiled_object_path = assembly_function(
             input_architecture,
             asm_source_code,
-            vma=parsed_args.vma,
-            syntax=parsed_args.syntax,
+            vma=args.vma,
+            syntax=args.syntax,
         )
 
-    outfile = parsed_args.outfile
+    outfile = args.outfile
     if outfile:
         print(f"Saving compiled program to {outfile}")
         shutil.copy(compiled_object_path, outfile)
@@ -334,20 +310,21 @@ def main():
         f = Path(outfile)
         f.chmod(f.stat().st_mode | stat.S_IEXEC)
 
-    if parsed_args.debug:
+    if args.debug:
         mode = RunMode.DEBUG
-    elif parsed_args.run:
+    elif args.run:
         mode = RunMode.RUN
     elif outfile is None:
         print("Specify --debug or --run to run program")
         sys.exit(1)
 
-    run(
-        input_architecture,
-        compiled_object_path,
-        mode,
-        parsed_args.shellcode,
-    )
+    if mode == RunMode.DEBUG:
+        ensure_tmux()
+        p = debug(input_architecture, compiled_object_path, gdb_path=args.debug)
+        p.interactive()
+    elif mode == RunMode.RUN:
+        p = run_program(compiled_object_path)
+        p.interactive()
 
 
 if __name__ == "__main__":
