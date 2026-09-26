@@ -36,7 +36,8 @@ To use `nasm` instead (for x86), you can add `--nasm`
 ```sh
 ## Note that you must have `nasm` findable on your PATH for this to work.
 ## Add the --nasm flag to use nasm syntax
-asmx --nasm --asm "mov eax, 10000" -d
+## It defaults to the host architecture (likely x86_64)
+asmx --nasm --asm "mov rax, -1" -d
 
 ## This works with files, as well
 asmx --nasm -i asm.S -d
