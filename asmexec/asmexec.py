@@ -50,7 +50,7 @@ pwnlib.context.context.terminal = ["tmux", "splitw", "-h", "-l", "80%"]
 
 
 # A simplified version of gdb.attach from pwntools with our own architecture mappings
-def debug(arch: str, filepath: str, gdb_path: str = "gdb"):
+def debug(arch: str, filepath: str, gdb_path: str):
     runner = pwnlib.tubes.process.process
     which = pwnlib.util.misc.which
 
@@ -94,6 +94,12 @@ def debug(arch: str, filepath: str, gdb_path: str = "gdb"):
     print(" ".join(shlex.quote(arg) for arg in args))
 
     gdbserver = runner(args, aslr=1)
+
+    if gdb_path == "DEFAULT_DEBUGGER":
+        if (gdb_multiarch := shutil.which("gdb-multiarch")) is not None:
+            gdb_path = gdb_multiarch
+        else:
+            gdb_path = "gdb"
 
     pwnlib.context.context.gdb_binary = gdb_path
 
@@ -167,7 +173,7 @@ def main():
         "-d",
         dest="debug",
         nargs="?",
-        const="gdb",
+        const="DEFAULT_DEBUGGER",
         default=False,
         help="Debug the program",
         metavar="gdb path",
