@@ -59,6 +59,13 @@ def debug(arch: str, filepath: str, gdb_path: str = "gdb"):
 
     qemu_name, endian, instruction_size = ARCH_INFO_MAPPING[arch]
 
+    if shutil.which(qemu_name) is None:
+        print(
+            f"Cannot find path to {qemu_name}. Make sure qemu is installed",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     gdbscript = f"""
     # record
     if ! $_isvoid($hex2ptr)
@@ -103,10 +110,10 @@ def ensure_tmux():
         return
 
     if not shutil.which("tmux"):
-        print("tmux not found")
+        print("tmux not found", file=sys.stderr)
         sys.exit(1)
     if not sys.stdin.isatty():
-        print("Not in a tty, can't start tmux")
+        print("Not in a tty, can't start tmux", file=sys.stderr)
         sys.exit(1)
 
     cmd = getattr(
@@ -219,7 +226,7 @@ def main():
         dest="cache_folder",
         action="store_true",
         default=False,
-        help=get_cache_dir()
+        help=get_cache_dir(),
     )
 
     args = parser.parse_args()
@@ -283,9 +290,10 @@ def main():
 
         if platform_arch not in SUPPORTED_ARCHITECTURES:
             print(
-                f"Could not automatically determine architecture of the system: {platform_arch}"
+                f"Could not automatically determine architecture of the system: {platform_arch}",
+                file=sys.stderr,
             )
-            print("You must provide an architecture with --arch")
+            print("You must provide an architecture with --arch", file=sys.stderr)
 
             sys.exit(1)
         else:
@@ -325,7 +333,7 @@ def main():
     elif args.run:
         mode = RunMode.RUN
     elif outfile is None:
-        print("Specify --debug or --run to run program")
+        print("Specify --debug or --run to run program", file=sys.stderr)
         sys.exit(1)
 
     if mode == RunMode.DEBUG:

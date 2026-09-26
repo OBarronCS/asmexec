@@ -284,7 +284,7 @@ def zig_compile_c_to_elf(
     if musl:
         musl_target_name = ZIG_MUSL_TARGET_NAME.get(arch)
         if not musl_target_name:
-            print(f"musl libc not supported for '{arch}'")
+            print(f"musl libc not supported for '{arch}'", file=sys.stderr)
             sys.exit(1)
         zig_target_name = f"{arch}-{musl_target_name}"
     else:
@@ -562,7 +562,7 @@ def nasm_assemble_to_elf(
     """
 
     if arch not in ARCHES_SUPPORTED_BY_NASM:
-        print(f"Architecture not supported by nasm: {arch}")
+        print(f"Architecture not supported by nasm: {arch}", file=sys.stderr)
         sys.exit(1)
 
     nasm_arch_name = NASM_ARCH_NAME_MAPPING[arch]
