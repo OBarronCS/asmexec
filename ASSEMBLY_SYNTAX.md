@@ -1,5 +1,7 @@
 
-This tool compiles using `zig cc` to compile assembly code. It uses `clang` under the hood, which uses a syntax similar to `GAS` syntax.
+By default, this tool compiles using `zig cc` to compile assembly code. It uses `clang` under the hood, which uses a syntax similar to `GAS` syntax.
+
+You can add the `--nasm` flag to use `nasm` instead.
 
 Example:
 
