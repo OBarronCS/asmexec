@@ -66,6 +66,9 @@ def debug(arch: str, filepath: str, gdb_path: str = "gdb"):
         )
         sys.exit(1)
 
+    # Run this after the previous check so that gets printed to the terminal
+    ensure_tmux()
+
     gdbscript = f"""
     # record
     if ! $_isvoid($hex2ptr)
@@ -337,7 +340,6 @@ def main():
         sys.exit(1)
 
     if mode == RunMode.DEBUG:
-        ensure_tmux()
         p = debug(input_architecture, compiled_object_path, gdb_path=args.debug)
         p.interactive()
     elif mode == RunMode.RUN:
