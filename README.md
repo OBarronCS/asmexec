@@ -1,6 +1,6 @@
 
 # asmx
-A small commandline tool that wraps `zig`, `qemu`, and `gdb` to quickly compile, run, and debug code across architectures. Useful for quickly running small test programs across different architectures (use a single command to run a program from source rather than remembering the arch triple you need to pass to `zig cc` and needing to open two terminals to run `qemu` and `gdb`).
+A small commandline tool that wraps `zig`, `nasm`, `qemu`, and `gdb` to quickly compile, run, and debug code across architectures. Useful for quickly running small test programs across different architectures (use a single command to run a program from source rather than remembering the arch triple you need to pass to `zig cc` and needing to open two terminals to run `qemu` and `gdb`).
 
 Inspired by helpful functions in [`pwntools`](https://github.com/Gallopsled/pwntools) (`asm`, `gdb.attach`), and also uses some code from [`pwndbg`](https://github.com/pwndbg/pwndbg/).
 
