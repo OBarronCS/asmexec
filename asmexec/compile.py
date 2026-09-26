@@ -205,6 +205,22 @@ def does_start_symbol_exist(assembly_string: str) -> bool:
     return False
 
 
+### nasm relevant settings
+ARCHES_SUPPORTED_BY_NASM: list[SUPPORTED_ARCHITECTURES_TYPE] = ["x86_64", "x86"]
+
+NASM_ARCH_NAMES_TYPE = Literal["elf64", "elf32"]
+NASM_ARCH_NAME_MAPPING: dict[SUPPORTED_ARCHITECTURES_TYPE, NASM_ARCH_NAMES_TYPE] = {
+    "x86_64": "elf64",
+    "x86": "elf32",
+}
+
+LD_ARCH_NAMES_TYPE = Literal["elf_i386", "elf_x86_64"]
+LD_ARCH_NAME_MAPPING: dict[SUPPORTED_ARCHITECTURES_TYPE, LD_ARCH_NAMES_TYPE] = {
+    "x86_64": "elf_x86_64",
+    "x86": "elf_i386",
+}
+
+
 ###
 ### Compiling with Zig
 ###
@@ -323,7 +339,7 @@ If you are linking to libc, remember to add --libc
 
 
 def zig_assemble_to_elf(
-    arch: str,
+    arch: SUPPORTED_ARCHITECTURES_TYPE,
     assembly_string: str,
     vma: int | None = None,
     syntax: str | None = None,
@@ -436,13 +452,13 @@ def zig_assemble_to_elf(
         if compile_process.returncode != 0:
             print("Compilation failed")
             print(pathlib.Path(asm_file).read_text())
-            raise Exception(
-                f"""Compilation error
+            error_message = f"""Compilation error
 {compile_process.stdout}
 {compile_process.stderr}
-If the assembly source is written with nasm syntax, add the '--nasm' CLI flag
 """
-            )
+            if arch in ARCHES_SUPPORTED_BY_NASM:
+                error_message += "If the assembly source is written with nasm syntax, add the '--nasm' CLI flag"
+            raise Exception(error_message)
 
         print(f"Copying file to cache: {cached_file_path}")
         shutil.copy2(compiled_file, cached_file_path)
@@ -477,20 +493,6 @@ If the assembly source is written with nasm syntax, add the '--nasm' CLI flag
 ###
 ### Compiling with nasm
 ###
-
-ARCHES_SUPPORTED_BY_NASM: list[SUPPORTED_ARCHITECTURES_TYPE] = ["x86_64", "x86"]
-
-NASM_ARCH_NAMES_TYPE = Literal["elf64", "elf32"]
-NASM_ARCH_NAME_MAPPING: dict[SUPPORTED_ARCHITECTURES_TYPE, NASM_ARCH_NAMES_TYPE] = {
-    "x86_64": "elf64",
-    "x86": "elf32",
-}
-
-LD_ARCH_NAMES_TYPE = Literal["elf_i386", "elf_x86_64"]
-LD_ARCH_NAME_MAPPING: dict[SUPPORTED_ARCHITECTURES_TYPE, LD_ARCH_NAMES_TYPE] = {
-    "x86_64": "elf_x86_64",
-    "x86": "elf_i386",
-}
 
 
 def get_nasm_executable() -> str:
@@ -547,7 +549,7 @@ def build_linker_command(
 
 
 def nasm_assemble_to_elf(
-    arch: str,
+    arch: SUPPORTED_ARCHITECTURES_TYPE,
     assembly_string: str,
     vma: int | None = None,
     syntax: str | None = None,
@@ -713,7 +715,9 @@ SUPPORTED_COMPILERS: list[SUPPORTED_COMPILERS_TYPE] = list(
     typing.get_args(SUPPORTED_COMPILERS_TYPE)
 )
 
-type AssembleFunction = Callable[[str, str, int | None, str | None, Any | None], str]
+type AssembleFunction = Callable[
+    [SUPPORTED_ARCHITECTURES_TYPE, str, int | None, str | None, Any | None], str
+]
 
 ASSEMBLY_CALLBACKS: dict[SUPPORTED_COMPILERS_TYPE, AssembleFunction] = {
     "zig": zig_assemble_to_elf,
