@@ -150,11 +150,12 @@ def main():
         "--arch",
         "-a",
         dest="arch",
-        choices=CLI_ALLOWED_ARCHITECTURES,
+        choices=CLI_ALLOWED_ARCHITECTURES + ["?"],
         help="Choose architecture if providing source code",
     )
     parser.add_argument(
         "--arch-list",
+        "--arches",
         action="store_true",
         dest="arch_list",
         help=" ".join(CLI_ALLOWED_ARCHITECTURES),
@@ -248,7 +249,7 @@ def main():
         print(get_cache_dir())
         sys.exit(0)
 
-    if args.arch_list:
+    if args.arch_list or args.arch == "?":
         for arch in SUPPORTED_ARCHITECTURES:
             aliases = ARCHITECTURE_NAME_ALIASES.get(arch, None)
             if aliases:
