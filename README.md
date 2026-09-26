@@ -46,7 +46,7 @@ asmx --nasm -i asm.S -d
 asmx --nasm --asm "mov eax, 10000" -d --arch x86
 ```
 
-When running with `-d`, the debugger opens in a new tmux pane. You must have tmux installed for this to work.
+When running with `-d`, the debugger opens in a new `tmux` pane. You must have `tmux` installed for this to work.
 
 ## Command reference
 
