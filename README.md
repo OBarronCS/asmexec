@@ -9,7 +9,7 @@ Inspired by helpful functions in [`pwntools`](https://github.com/Gallopsled/pwnt
 ```sh
 # Examples
 ## Compile and run inline assembly code. --debug/-d opens GDB
-asmx --arch aarch64 --asm "nop;nop;nop;nop" --vma 0x9000 --debug
+asmx --arch aarch64 --asm "nop;nop;nop;nop" --vma 0x90000 --debug
 
 ## Compile and run code from an assembly file
 asmx --arch amd64 --file shellcode.S -d
