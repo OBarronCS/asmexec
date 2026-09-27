@@ -112,6 +112,11 @@ def debug(arch: str, filepath: str, gdb_path: str):
 def run_program(filepath: str):
     return pwnlib.tubes.process.process(filepath)
 
+def tmux_cli_escape(arg: str) -> str:
+    # tmux treats a trailing ';' in an argument as a command separator.
+    # We have to escape this with '\;'
+    return arg[:-1] + "\\;" if arg.endswith(";") else arg
+
 
 def ensure_tmux():
     """
@@ -131,7 +136,7 @@ def ensure_tmux():
     cmd = getattr(
         sys, "orig_argv", [sys.executable, os.path.abspath(sys.argv[0]), *sys.argv[1:]]
     )
-    os.execvp("tmux", ["tmux", "new-session", "--", *cmd])
+    os.execvp("tmux", ["tmux", "new-session", "--", *map(tmux_cli_escape, cmd)])
 
 
 class RunMode(Enum):
