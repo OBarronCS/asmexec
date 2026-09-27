@@ -146,6 +146,8 @@ def main():
     chosen_compiler: SUPPORTED_COMPILERS_TYPE = "zig"
 
     parser = argparse.ArgumentParser()
+    parser.suggest_on_error = True
+
     parser.add_argument(
         "--arch",
         "-a",
@@ -170,6 +172,10 @@ def main():
     )
 
     parser.add_argument(
+        "--asm", dest="asm", required=False, default=None, help="Assembly code to run"
+    )
+
+    parser.add_argument(
         "--debug",
         "-d",
         dest="debug",
@@ -187,10 +193,6 @@ def main():
         default=False,
         action="store_true",
         help="Debug the program",
-    )
-
-    parser.add_argument(
-        "--asm", dest="asm", required=False, default=None, help="Assembly code to run"
     )
 
     parser.add_argument(
@@ -213,18 +215,10 @@ def main():
         "--nasm",
         action="store_true",
         dest="nasm",
-        help="Compile the source code with musl libc (statically)",
+        help="Compile with nasm",
     )
 
     parser.add_argument("--shellcode", dest="shellcode", action="store_true")
-
-    parser.add_argument(
-        "-o",
-        dest="outfile",
-        default=None,
-        required=False,
-        help="Save compiled elf to this file",
-    )
 
     parser.add_argument(
         "--syntax",
@@ -233,6 +227,14 @@ def main():
         choices=VALID_X86_SYNTAXES,
         required=False,
         help="Syntax for x86 assembly. Intel by default",
+    )
+
+    parser.add_argument(
+        "-o",
+        dest="outfile",
+        default=None,
+        required=False,
+        help="Save compiled elf to this file",
     )
 
     parser.add_argument(

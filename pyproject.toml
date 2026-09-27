@@ -7,6 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "pyelftools",
     "pwntools",
+    # pwntools depends on a version of unicorn without wheels for newest python versions
+    # this removes the bad version
+    "unicorn!=2.1.2",
     "ziglang==0.16.0"
 ]
 

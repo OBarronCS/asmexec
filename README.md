@@ -116,12 +116,13 @@ It will automatically cache the compiled files, so subsequent runs with the same
 
 Install with `uv`
 ```sh
-uv tool install git+https://github.com/OBarronCS/asmexec.git
+# python 3.14 is recommended as it makes argparse nicer
+uv tool install --python 3.14 git+https://github.com/OBarronCS/asmexec.git
 ```
 
 ### For local development
 
 ```sh
-uv tool install --editable .
+uv tool install --python 3.14 --editable .
 ```
 
