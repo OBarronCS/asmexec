@@ -10,8 +10,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any, Callable, Literal
 import typing
+from collections.abc import Callable
+from typing import Any, Literal
 
 from asmexec.helpers import find_cached_version
 
@@ -322,11 +323,11 @@ def zig_compile_c_to_elf(
             stdin=subprocess.DEVNULL,
             # stdout=subprocess.PIPE,
             # stderr=subprocess.PIPE,
-            universal_newlines=True,
+            text=True,
         )
         if compile_process.returncode != 0:
             raise Exception(
-                f"""Compilation error.
+                """Compilation error.
 See error message above
 If you are linking to libc, remember to add --libc
 """
@@ -369,7 +370,7 @@ def zig_assemble_to_elf(
     if includes is None:
         includes = []
 
-    includes = "".join((f'#include "{path}"\n' for path in includes))
+    includes = "".join(f'#include "{path}"\n' for path in includes)
     zig_target_name = f"{arch}-freestanding"
 
     nasm_hash_lookup_linker_file = ""
@@ -447,7 +448,7 @@ def zig_assemble_to_elf(
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            universal_newlines=True,
+            text=True,
         )
         if compile_process.returncode != 0:
             print("Compilation failed")
@@ -655,7 +656,7 @@ def nasm_assemble_to_elf(
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            universal_newlines=True,
+            text=True,
         )
         if compile_process.returncode != 0:
             print("Compilation failed")
@@ -690,7 +691,7 @@ def nasm_assemble_to_elf(
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            universal_newlines=True,
+            text=True,
         )
 
         if link_process.returncode != 0:

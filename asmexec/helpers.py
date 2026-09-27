@@ -1,8 +1,8 @@
 import errno
-import sys
-import os
-
 import hashlib
+import os
+import sys
+
 from pwnlib.util.packing import _encode
 
 CACHE_DIR_BASE_NAME = ".asmexec-cache"

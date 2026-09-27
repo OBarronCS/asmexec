@@ -7,26 +7,25 @@
 # ///
 
 import argparse
-
-from enum import Enum, auto
-import random
-from pathlib import Path
-import shlex
-import sys
 import os
 import os.path
+import platform
+import random
+import shlex
 import shutil
 import stat
+import sys
+from enum import Enum, auto
+from pathlib import Path
+
 import elftools
 import pwnlib
-import pwnlib.tubes.process
-import pwnlib.util.misc
-import pwnlib.gdb
 import pwnlib.context
 import pwnlib.elf
+import pwnlib.gdb
+import pwnlib.tubes.process
+import pwnlib.util.misc
 from pwnlib.log import install_default_handler
-
-import platform
 
 from asmexec.compile import (
     ARCH_INFO_MAPPING,
@@ -146,6 +145,7 @@ def main():
     chosen_compiler: SUPPORTED_COMPILERS_TYPE = "zig"
 
     parser = argparse.ArgumentParser()
+
     parser.suggest_on_error = True
 
     parser.add_argument(
@@ -279,7 +279,7 @@ def main():
     if input_file:
         input_file = str(Path(input_file).resolve())
         if input_file.endswith(".c"):
-            c_source_code = open(input_file, "r").read()
+            c_source_code = Path(input_file).read_text()
         else:
             try:
                 # Check if it's an ELF file
@@ -297,7 +297,7 @@ def main():
 
                 compiled_object_path = input_file
             except elftools.common.exceptions.ELFError:
-                asm_source_code = open(input_file, "r").read()
+                asm_source_code = Path(input_file).read_text()
 
     if not input_architecture:
         platform_arch = platform.machine()
