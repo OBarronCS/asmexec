@@ -112,6 +112,7 @@ def debug(arch: str, filepath: str, gdb_path: str):
 def run_program(filepath: str):
     return pwnlib.tubes.process.process(filepath)
 
+
 def tmux_cli_escape(arg: str) -> str:
     # tmux treats a trailing ';' in an argument as a command separator.
     # We have to escape this with '\;'
