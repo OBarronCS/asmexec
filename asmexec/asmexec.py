@@ -33,6 +33,7 @@ from asmexec.compile import (
     ASSEMBLY_CALLBACKS,
     CLI_ALLOWED_ARCHITECTURES,
     DEFAULT_X64_SYNTAX,
+    EXTRA_OPTIONS_PER_ARCH,
     PWNTOOLS_NAMING_CONVERSION,
     SUPPORTED_ARCHITECTURES,
     SUPPORTED_COMPILERS_TYPE,
@@ -170,6 +171,13 @@ def main():
     )
 
     parser.add_argument(
+        "--options",
+        dest="options",
+        default="",
+        help="Space delimited list of additional options",
+    )
+
+    parser.add_argument(
         "--file",
         "-f",
         "-i",
@@ -266,18 +274,39 @@ def main():
                 print(arch)
         sys.exit(0)
 
+    input_architecture: str | None = args.arch
+    input_file: str = args.file
+
+    if input_architecture is not None:
+        input_architecture = resolve_to_canonical_name(input_architecture)
+
+    if args.options.strip() == "?":
+        if input_architecture is not None:
+            if input_architecture in EXTRA_OPTIONS_PER_ARCH:
+                options = list(EXTRA_OPTIONS_PER_ARCH[input_architecture])
+                print(f"{input_architecture} options: " + " ".join(options))
+            else:
+                print(f"No extra options available for {input_architecture}")
+        else:
+            for arch in SUPPORTED_ARCHITECTURES:
+                if arch not in EXTRA_OPTIONS_PER_ARCH:
+                    continue
+                options = list(EXTRA_OPTIONS_PER_ARCH[arch])
+                print(f"{arch} options: " + " ".join(options))
+        sys.exit(0)
+
+    raw_options = args.options.strip()
+    if raw_options:
+        options = raw_options.split(",")
+    else:
+        options = []
+
     if not args.file and not args.asm and not args.outfile and not args.arch_list:
         parser.print_help()
         sys.exit(1)
 
     if args.nasm:
         chosen_compiler = "nasm"
-
-    input_architecture: str | None = args.arch
-    input_file: str = args.file
-
-    if input_architecture is not None:
-        input_architecture = resolve_to_canonical_name(input_architecture)
 
     asm_source_code = ""
     c_source_code = ""
@@ -327,6 +356,19 @@ def main():
     elif not sys.stdin.isatty():
         asm_source_code = sys.stdin.read()
 
+    found_unknown_option = False
+    for option in options:
+        if input_architecture not in EXTRA_OPTIONS_PER_ARCH:
+            print(f"{input_architecture} does not take any options. Quitting")
+            sys.exit(1)
+
+        if option not in EXTRA_OPTIONS_PER_ARCH[input_architecture]:
+            print(f"Unknown option: {option}")
+            found_unknown_option = True
+
+    if found_unknown_option:
+        sys.exit(1)
+
     if c_source_code:
         compiled_object_path = zig_compile_c_to_elf(
             input_architecture, c_source_code, args.libc
@@ -336,6 +378,7 @@ def main():
 
         compiled_object_path = assembly_function(
             input_architecture,
+            options,
             asm_source_code,
             vma=args.vma,
             syntax=args.syntax,

@@ -12,9 +12,9 @@ import sys
 import tempfile
 import typing
 from collections.abc import Callable
+from importlib.metadata import version
 from typing import Any, Literal
 
-from importlib.metadata import version
 from asmexec.helpers import find_cached_version
 
 # This defines the canonical names for arches used by this tool
@@ -59,6 +59,7 @@ ARCHITECTURE_NAME_ALIASES: dict[SUPPORTED_ARCHITECTURES_TYPE, set[str]] = {
     "aarch64": {"arm64"},
     "aarch64_be": {"aarch64be", "aarch64eb", "arm64be", "arm64eb"},
     "arm": {"arm32"},
+    "armeb": {"armbe", "armbe32", "armeb32", "arm32be", "arm32eb"},
     "riscv32": {"rv32"},
     "riscv64": {"rv64"},
     "powerpc": {"ppc"},
@@ -145,6 +146,19 @@ ZIG_MUSL_TARGET_NAME: dict[str, str | None] = {
     "loongarch64": "linux-musl",
     "s390x": "linux-musl",
 }
+
+ARMEB_ENDIANNESS_NAMES_TYPE = Literal["be8", "be32"]
+
+# When compiling with armeb, use this flag to choose which scheme
+# armeb implies big endian, bit there are two ways to do big endian
+ZIG_ARMEB_ENDIANNESS_TO_FLAGS: dict[ARMEB_ENDIANNESS_NAMES_TYPE, tuple[str, ...]] = {
+    "be32": ("-mcpu=arm926ej_s",),
+    "be8": ("-mcpu=cortex_a7",),
+}
+
+EXTRA_OPTIONS_PER_ARCH: dict[
+    SUPPORTED_ARCHITECTURES_TYPE, dict[str, tuple[str, ...]]
+] = {"armeb": ZIG_ARMEB_ENDIANNESS_TO_FLAGS}
 
 
 INTEL_SYNTAX = ".intel_syntax noprefix"
@@ -251,8 +265,10 @@ def get_zig_executable() -> str:
 
 
 def build_zig_command(
+    arch: SUPPORTED_ARCHITECTURES_TYPE,
     zig_executable: str,
     zig_target: str,
+    options: list[str],
     asm_path: str,
     output_path: str,
     linker_script_path: str | None,
@@ -271,6 +287,10 @@ def build_zig_command(
     if linker_script_path:
         command.append(f"-Wl,-T,{linker_script_path}")
 
+    for option in options:
+        # TODO: validate that it's a valid extra option
+        command += list(EXTRA_OPTIONS_PER_ARCH[arch][option])
+
     return command
 
 
@@ -285,7 +305,7 @@ def zig_compile_c_to_elf(
     zig_version = version("ziglang")
 
     zig_executable = get_zig_executable()
-      
+
     if musl:
         musl_target_name = ZIG_MUSL_TARGET_NAME.get(arch)
         if not musl_target_name:
@@ -296,16 +316,11 @@ def zig_compile_c_to_elf(
         zig_target_name = f"{arch}-freestanding"
 
     zig_hash_lookup = build_zig_command(
-        zig_executable, zig_target_name, "INPUT_FILE", "OUTPUT_FILE", ""
+        arch, zig_executable, zig_target_name, [], "INPUT_FILE", "OUTPUT_FILE", ""
     )
 
     cached_file_path, is_cached = find_cached_version(
-        zig_hash_lookup,
-        f"version={zig_version}"
-        + c_source_code,
-        arch,
-        "",
-        None
+        zig_hash_lookup, f"version={zig_version}" + c_source_code, arch, "", None
     )
 
     if is_cached:
@@ -317,7 +332,7 @@ def zig_compile_c_to_elf(
         compiled_file = os.path.join(tmpdir, "out.elf")
 
         zig_command = build_zig_command(
-            zig_executable, zig_target_name, c_source_file, compiled_file, None
+            arch, zig_executable, zig_target_name, [], c_source_file, compiled_file, ""
         )
 
         with open(c_source_file, "w") as f:
@@ -350,6 +365,7 @@ If you are linking to libc, remember to add --libc
 
 def zig_assemble_to_elf(
     arch: SUPPORTED_ARCHITECTURES_TYPE,
+    options: list[str],
     assembly_string: str,
     vma: int | None = None,
     syntax: str | None = None,
@@ -404,8 +420,10 @@ def zig_assemble_to_elf(
             """
 
     zig_hash_lookup = build_zig_command(
+        arch,
         zig_executable,
         zig_target_name,
+        options,
         "INPUT_FILE",
         "OUTPUT_FILE",
         nasm_hash_lookup_linker_file,
@@ -443,7 +461,13 @@ def zig_assemble_to_elf(
                 f.write(linker_script_code)
 
         zig_command = build_zig_command(
-            zig_executable, zig_target_name, asm_file, compiled_file, linker_script
+            arch,
+            zig_executable,
+            zig_target_name,
+            options,
+            asm_file,
+            compiled_file,
+            linker_script,
         )
 
         with open(asm_file, "w") as f:
@@ -563,6 +587,7 @@ def build_linker_command(
 
 def nasm_assemble_to_elf(
     arch: SUPPORTED_ARCHITECTURES_TYPE,
+    options: list[str],
     assembly_string: str,
     vma: int | None = None,
     syntax: str | None = None,
@@ -729,7 +754,8 @@ SUPPORTED_COMPILERS: list[SUPPORTED_COMPILERS_TYPE] = list(
 )
 
 type AssembleFunction = Callable[
-    [SUPPORTED_ARCHITECTURES_TYPE, str, int | None, str | None, Any | None], str
+    [SUPPORTED_ARCHITECTURES_TYPE, list[str], str, int | None, str | None, Any | None],
+    str,
 ]
 
 ASSEMBLY_CALLBACKS: dict[SUPPORTED_COMPILERS_TYPE, AssembleFunction] = {
