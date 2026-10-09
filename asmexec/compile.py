@@ -14,6 +14,7 @@ import typing
 from collections.abc import Callable
 from typing import Any, Literal
 
+from importlib.metadata import version
 from asmexec.helpers import find_cached_version
 
 # This defines the canonical names for arches used by this tool
@@ -56,6 +57,7 @@ ARCHITECTURE_NAME_ALIASES: dict[SUPPORTED_ARCHITECTURES_TYPE, set[str]] = {
     "mips": {"mips32"},
     "mipsel": {"mipsel32"},
     "aarch64": {"arm64"},
+    "aarch64_be": {"aarch64be", "aarch64eb", "arm64be", "arm64eb"},
     "arm": {"arm32"},
     "riscv32": {"rv32"},
     "riscv64": {"rv64"},
@@ -280,8 +282,10 @@ def zig_compile_c_to_elf(
     """
     Return path to the compiled file
     """
-    zig_executable = get_zig_executable()
+    zig_version = version("ziglang")
 
+    zig_executable = get_zig_executable()
+      
     if musl:
         musl_target_name = ZIG_MUSL_TARGET_NAME.get(arch)
         if not musl_target_name:
@@ -296,7 +300,12 @@ def zig_compile_c_to_elf(
     )
 
     cached_file_path, is_cached = find_cached_version(
-        zig_hash_lookup, c_source_code, arch, "", None
+        zig_hash_lookup,
+        f"version={zig_version}"
+        + c_source_code,
+        arch,
+        "",
+        None
     )
 
     if is_cached:
@@ -353,6 +362,8 @@ def zig_assemble_to_elf(
     if syntax is None:
         syntax = DEFAULT_X64_SYNTAX
 
+    zig_version = version("ziglang")
+
     zig_executable = get_zig_executable()
 
     header = f"{_start_section_header}\n"
@@ -402,7 +413,8 @@ def zig_assemble_to_elf(
 
     cached_file_path, is_cached = find_cached_version(
         zig_hash_lookup,
-        header
+        f"version={zig_version}"
+        + header
         + assembly_string
         + linker_script_code
         + USER_CODE_SECTION_NAME
