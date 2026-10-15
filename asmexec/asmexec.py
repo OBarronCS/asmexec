@@ -28,7 +28,6 @@ import pwnlib.util.misc
 from pwnlib.log import install_default_handler
 
 from asmexec.compile import (
-    ARCH_INFO_MAPPING,
     ARCHITECTURE_NAME_ALIASES,
     ASSEMBLY_CALLBACKS,
     CLI_ALLOWED_ARCHITECTURES,
@@ -38,6 +37,7 @@ from asmexec.compile import (
     SUPPORTED_ARCHITECTURES,
     SUPPORTED_COMPILERS_TYPE,
     VALID_X86_SYNTAXES,
+    ZIG_ARCH_INFO,
     resolve_to_canonical_name,
     zig_compile_c_to_elf,
 )
@@ -58,7 +58,7 @@ def debug(arch: str, filepath: str, gdb_path: str):
 
     port = random.randint(1024, 65535)
 
-    qemu_name, endian, instruction_size = ARCH_INFO_MAPPING[arch]
+    qemu_name, endian, _, instruction_size = ZIG_ARCH_INFO[arch]
 
     if shutil.which(qemu_name) is None:
         print(
@@ -297,7 +297,7 @@ def main():
 
     raw_options = args.options.strip()
     if raw_options:
-        options = raw_options.split(",")
+        options = raw_options.split(" ")
     else:
         options = []
 

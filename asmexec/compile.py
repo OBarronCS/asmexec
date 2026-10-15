@@ -43,6 +43,9 @@ SUPPORTED_ARCHITECTURES_TYPE = Literal[
     "powerpc64le",
     "loongarch64",
     "s390x",
+    "m68k",
+    "alpha",
+    "hppa",
 ]
 
 SUPPORTED_ARCHITECTURES: list[SUPPORTED_ARCHITECTURES_TYPE] = list(
@@ -71,9 +74,12 @@ ARCHITECTURE_NAME_ALIASES: dict[SUPPORTED_ARCHITECTURES_TYPE, set[str]] = {
 
 REVERSE_ARCH_NAME_ALIAS_MAP: dict[str, SUPPORTED_ARCHITECTURES_TYPE] = {}
 
-PWNTOOLS_NAMING_CONVERSION: dict[str, SUPPORTED_ARCHITECTURES_TYPE] = {
+PWNTOOLS_NAMING_CONVERSION: dict[str | int, SUPPORTED_ARCHITECTURES_TYPE] = {
     "amd64": "x86_64",
     "i386": "x86",
+    "EM_68K": "m68k",
+    36902: "alpha",
+    "EM_PARISC": "hppa",
 }
 
 CLI_ALLOWED_ARCHITECTURES: list[str] = list(SUPPORTED_ARCHITECTURES)
@@ -92,34 +98,40 @@ def resolve_to_canonical_name(name: str) -> SUPPORTED_ARCHITECTURES_TYPE:
     return name
 
 
-# Tuple of (qemu name, endian, instruction_bytes_to_display)
-ARCH_INFO_MAPPING: dict[SUPPORTED_ARCHITECTURES_TYPE, tuple[str, str, int]] = {
-    "x86_64": ("qemu-x86_64", "little", 10),
-    "x86": ("qemu-i386", "little", 10),
-    "mips": ("qemu-mips", "big", 4),
-    "mipsel": ("qemu-mipsel", "little", 4),
-    "mips64": ("qemu-mips64", "big", 4),
-    "mips64el": ("qemu-mips64el", "little", 4),
-    "aarch64": ("qemu-aarch64", "little", 4),
+# Tuple of (qemu name, endian, additional_flags, instruction_bytes_to_display)
+ZIG_ARCH_INFO: dict[
+    SUPPORTED_ARCHITECTURES_TYPE, tuple[str, str, tuple[str, ...], int]
+] = {
+    "x86_64": ("qemu-x86_64", "little", (), 10),
+    "x86": ("qemu-i386", "little", (), 10),
+    "mips": ("qemu-mips", "big", (), 4),
+    "mipsel": ("qemu-mipsel", "little", (), 4),
+    "mips64": ("qemu-mips64", "big", (), 4),
+    "mips64el": ("qemu-mips64el", "little", (), 4),
+    "aarch64": ("qemu-aarch64", "little", (), 4),
     "aarch64_be": (
         "qemu-aarch64_be",
         "big",
+        (),
         4,
     ),
-    "arm": ("qemu-arm", "little", 4),
-    "armeb": ("qemu-armeb", "big", 4),
-    "thumb": ("qemu-arm", "little", 4),
-    "thumbeb": ("qemu-armeb", "big", 4),
-    "riscv32": ("qemu-riscv32", "little", 4),
-    "riscv64": ("qemu-riscv64", "little", 4),
-    "sparc": ("qemu-sparc", "little", 4),
-    "sparc64": ("qemu-sparc64", "little", 4),
-    "powerpc": ("qemu-ppc", "big", 4),
-    "powerpcle": ("qemu-ppc", "little", 4),
-    "powerpc64": ("qemu-ppc64", "big", 4),
-    "powerpc64le": ("qemu-ppc64le", "little", 4),
-    "loongarch64": ("qemu-loongarch64", "little", 4),
-    "s390x": ("qemu-s390x", "little", 4),
+    "arm": ("qemu-arm", "little", (), 4),
+    "armeb": ("qemu-armeb", "big", (), 4),
+    "thumb": ("qemu-arm", "little", (), 4),
+    "thumbeb": ("qemu-armeb", "big", (), 4),
+    "riscv32": ("qemu-riscv32", "little", (), 4),
+    "riscv64": ("qemu-riscv64", "little", (), 4),
+    "sparc": ("qemu-sparc", "little", (), 4),
+    "sparc64": ("qemu-sparc64", "little", (), 4),
+    "powerpc": ("qemu-ppc", "big", (), 4),
+    "powerpcle": ("qemu-ppc", "little", (), 4),
+    "powerpc64": ("qemu-ppc64", "big", (), 4),
+    "powerpc64le": ("qemu-ppc64le", "little", (), 4),
+    "loongarch64": ("qemu-loongarch64", "little", (), 4),
+    "s390x": ("qemu-s390x", "little", (), 4),
+    "m68k": ("qemu-m68k", "little", ("-mcpu=M68000",), 4),
+    "alpha": ("qemu-alpha", "little", (), 4),
+    "hppa": ("qemu-hppa", "little", (), 4),
 }
 
 ZIG_MUSL_TARGET_NAME: dict[str, str | None] = {
@@ -345,13 +357,15 @@ def zig_compile_c_to_elf(
         compile_process = subprocess.run(
             zig_command,
             stdin=subprocess.DEVNULL,
-            # stdout=subprocess.PIPE,
-            # stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
         )
         if compile_process.returncode != 0:
             raise Exception(
-                """Compilation error.
+                f"""Compilation error.
+{compile_process.stdout}
+{compile_process.stderr}
 See error message above
 If you are linking to libc, remember to add --libc
 """
